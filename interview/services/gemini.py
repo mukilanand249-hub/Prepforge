@@ -289,3 +289,84 @@ def generate_question_with_gemini(
         fallback['difficulty'] = difficulty
         fallback['title'] = f"{fallback['title']} ({company_name} Edition)"
         return fallback
+
+
+SUMMARY_PROMPT_TEMPLATE = """You are a senior technical interviewer providing feedback on a candidate's Python coding practice session.
+Analyze the following session performance statistics (NO code is provided):
+
+Target Company Style: {company}
+Session Summary:
+{stats_json}
+
+Provide actionable, concise feedback in valid JSON matching this schema:
+{{
+  "strengths": ["string", "string"],
+  "weak_topics": ["string", "string"],
+  "next_steps": ["string", "string"]
+}}
+
+Rules:
+- Keep items concise (1-2 sentences each).
+- Max 2 to 3 items per list.
+- Return ONLY JSON.
+"""
+
+def generate_ai_performance_summary(company: str, session_stats: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Sends session stats to Gemini and returns structured performance summary.
+    Falls back to deterministic rule-based summary if API key is not set or fails.
+    """
+    api_key = getattr(settings, 'GEMINI_API_KEY', '')
+
+    # Fallback / offline summary
+    avg_score = 0
+    if session_stats:
+        avg_score = sum(s.get('score', 0) for s in session_stats) / len(session_stats)
+
+    fallback_summary = {
+        "strengths": [
+            f"Successfully attempted {len(session_stats)} question(s) in {company} problem archetype.",
+            "Demonstrated foundational algorithmic formulation and syntax compliance."
+        ],
+        "weak_topics": [
+            "Review edge-case boundary conditions (empty inputs, zero values, and scale constraints).",
+            "Focus on execution speed and space complexity under tight per-test limits."
+        ],
+        "next_steps": [
+            f"Practice 2-3 more Medium difficulty questions targeting {company} data patterns.",
+            "Profile solutions locally with timer benchmarks before submitting."
+        ]
+    }
+
+    if not api_key:
+        return fallback_summary
+
+    try:
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=api_key)
+        model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.5-flash')
+
+        prompt = SUMMARY_PROMPT_TEMPLATE.format(
+            company=company,
+            stats_json=json.dumps(session_stats, indent=2)
+        )
+
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.6,
+            )
+        )
+
+        cleaned = clean_json_response(response.text)
+        data = json.loads(cleaned)
+        if 'strengths' in data and 'weak_topics' in data and 'next_steps' in data:
+            return data
+        return fallback_summary
+    except Exception as e:
+        logger.warning(f"Error generating AI performance summary with Gemini: {e}")
+        return fallback_summary

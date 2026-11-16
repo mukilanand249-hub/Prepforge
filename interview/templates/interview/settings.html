@@ -7,6 +7,11 @@
     <div class="settings-hero">
         <h1>Forge Your Interview Session</h1>
         <p>AI-generated Python challenges tailored to company archetypes, verified in-browser before you begin.</p>
+        <div style="margin-top: 0.75rem;">
+            <span class="user-pill" style="font-size: 0.8rem; background: var(--bg-elevated);">
+                ⚡ Daily Generation Quota: <strong>{{ daily_usage }}/{{ daily_limit }}</strong> used today
+            </span>
+        </div>
     </div>
 
     <form method="post" action="{% url 'interview:create_session' %}">
@@ -25,6 +30,29 @@
                     </div>
                 </label>
                 {% endfor %}
+
+                <!-- Phase 2: Custom Company -->
+                <label class="option-box" onclick="selectCompany(this, true)">
+                    <input type="radio" name="company_id" value="custom" style="display: none;">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.35rem; color: var(--accent-primary);">
+                        + Custom Company
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
+                        Specify any company or domain-specific problem requirements.
+                    </div>
+                </label>
+            </div>
+
+            <!-- Custom Company Input Fields (hidden by default) -->
+            <div id="customCompanyFields" style="display: none; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" for="custom_company_name">Custom Company Name</label>
+                    <input type="text" name="custom_company_name" id="custom_company_name" class="form-input" placeholder="e.g. Stripe, Palantir, Databricks">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="custom_style_notes">Custom Interview Style Guidance (Optional)</label>
+                    <input type="text" name="custom_style_notes" id="custom_style_notes" class="form-input" placeholder="e.g. Distributed consensus, rate-limiting algorithms, graph traversals">
+                </div>
             </div>
         </div>
 
@@ -75,11 +103,16 @@
 
 {% block scripts %}
 <script>
-function selectCompany(el) {
+function selectCompany(el, isCustom = false) {
     document.querySelectorAll('.option-box').forEach(box => box.classList.remove('active'));
     el.classList.add('active');
     const radio = el.querySelector('input[type="radio"]');
     if (radio) radio.checked = true;
+
+    const customFields = document.getElementById("customCompanyFields");
+    if (customFields) {
+        customFields.style.display = isCustom ? "block" : "none";
+    }
 }
 </script>
 {% endblock %}

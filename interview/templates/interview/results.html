@@ -22,6 +22,56 @@
             <a href="{% url 'interview:settings' %}" class="btn btn-primary">
                 ⚡ Start New Session
             </a>
+            <a href="{% url 'interview:dashboard' %}" class="btn btn-secondary">
+                📊 View History Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- AI Performance Summary (Phase 2) -->
+    <div class="card" style="margin-bottom: 2rem; border-color: rgba(56, 189, 248, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🤖</span> AI Performance Summary
+            </h3>
+            <button id="btnRegenSummary" class="btn btn-secondary btn-sm" onclick="regenerateSummary()">
+                🔄 Refresh Analysis
+            </button>
+        </div>
+
+        <div id="summaryContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem;">
+            {% if ai_summary %}
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 1rem;">
+                    <div style="color: #34d399; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem;">✨ Observed Strengths</div>
+                    <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                        {% for s in ai_summary.strengths %}
+                            <li style="margin-bottom: 0.35rem;">{{ s }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 1rem;">
+                    <div style="color: #fbbf24; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem;">🎯 Areas for Focus</div>
+                    <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                        {% for w in ai_summary.weak_topics %}
+                            <li style="margin-bottom: 0.35rem;">{{ w }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 1rem;">
+                    <div style="color: #38bdf8; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem;">🚀 Recommended Next Steps</div>
+                    <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                        {% for n in ai_summary.next_steps %}
+                            <li style="margin-bottom: 0.35rem;">{{ n }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 1rem;">
+                    Click "Refresh Analysis" to synthesize AI feedback with Gemini.
+                </div>
+            {% endif %}
         </div>
     </div>
 
@@ -102,6 +152,31 @@ function toggleCode(rowId) {
     const row = document.getElementById(rowId);
     if (!row) return;
     row.style.display = row.style.display === "none" ? "table-row" : "none";
+}
+
+async function regenerateSummary() {
+    const btn = document.getElementById("btnRegenSummary");
+    btn.disabled = true;
+    btn.textContent = "Analyzing...";
+
+    try {
+        const resp = await fetch("/api/sessions/{{ session.id }}/summary/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        });
+        const data = await resp.json();
+        if (data.success && data.ai_summary) {
+            window.location.reload();
+        }
+    } catch (e) {
+        console.error("Error generating summary:", e);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "🔄 Refresh Analysis";
+    }
 }
 </script>
 {% endblock %}

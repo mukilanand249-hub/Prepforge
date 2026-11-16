@@ -24,6 +24,7 @@
                 {% if user.is_authenticated %}
                     <span class="user-pill">👤 {{ user.username }}</span>
                     <a href="{% url 'interview:settings' %}" class="nav-link">New Session</a>
+                    <a href="{% url 'interview:dashboard' %}" class="nav-link">Dashboard</a>
                     <a href="{% url 'logout' %}" class="nav-link nav-link-logout">Sign Out</a>
                 {% else %}
                     <a href="{% url 'login' %}" class="nav-link">Sign In</a>

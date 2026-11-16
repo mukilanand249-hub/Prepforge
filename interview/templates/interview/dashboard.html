@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Dashboard — PrepForge{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container" style="max-width: 1100px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="font-size: 2rem; font-weight: 800;">Candidate History & Analytics</h1>
+            <p style="color: var(--text-secondary); font-size: 0.95rem;">Track score progression, topic accuracy, and algorithmic timing across all interview sessions.</p>
+        </div>
+        <a href="{% url 'interview:settings' %}" class="btn btn-primary">
+            ⚡ New Practice Session
+        </a>
+    </div>
+
+    <!-- Stat Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="card" style="padding: 1.25rem;">
+            <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">Total Sessions</div>
+            <div style="font-size: 2.25rem; font-weight: 800; color: #38bdf8;">{{ total_sessions }}</div>
+        </div>
+
+        <div class="card" style="padding: 1.25rem;">
+            <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">Average Score</div>
+            <div style="font-size: 2.25rem; font-weight: 800; color: #10b981;">{{ avg_session_score }}%</div>
+        </div>
+
+        <div class="card" style="padding: 1.25rem;">
+            <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">Auto-Submit Rate</div>
+            <div style="font-size: 2.25rem; font-weight: 800; color: #f59e0b;">{{ auto_submit_rate }}%</div>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+        <div class="card">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">Session Score Progression</h3>
+            <canvas id="scoreChart" height="240"></canvas>
+        </div>
+
+        <div class="card">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">Accuracy by Topic (%)</h3>
+            <canvas id="topicChart" height="240"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Sessions Table -->
+    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Recent Practice Sessions</h3>
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Company</th>
+                <th>Difficulty</th>
+                <th>Questions</th>
+                <th>Score</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in recent_sessions %}
+            <tr>
+                <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ s.started_at|date:"M d, Y - H:i" }}</td>
+                <td style="font-weight: 600;">{{ s.company.name }}</td>
+                <td><span class="badge badge-{{ s.difficulty_mode }}">{{ s.difficulty_mode|upper }}</span></td>
+                <td>{{ s.num_questions }}</td>
+                <td style="font-weight: 700; color: {% if s.score >= 80 %}#34d399{% elif s.score >= 50 %}#fbbf24{% else %}#f87171{% endif %};">
+                    {{ s.score|default:"0"|floatformat:1 }}%
+                </td>
+                <td>
+                    <a href="{% url 'interview:results' session_id=s.id %}" class="btn btn-secondary btn-sm">
+                        View Results
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    No completed practice sessions found. Complete your first session to unlock trends!
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dates = JSON.parse('{{ chart_dates_json|escapejs }}');
+    const scores = JSON.parse('{{ chart_scores_json|escapejs }}');
+    const topics = JSON.parse('{{ chart_topics_json|escapejs }}');
+    const topicScores = JSON.parse('{{ chart_topic_scores_json|escapejs }}');
+
+    // Score over time line chart
+    const ctxScore = document.getElementById('scoreChart');
+    if (ctxScore) {
+        new Chart(ctxScore, {
+            type: 'line',
+            data: {
+                labels: dates.length ? dates : ["Start"],
+                datasets: [{
+                    label: 'Session Score %',
+                    data: scores.length ? scores : [0],
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#38bdf8'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, max: 100, grid: { color: '#232c42' } },
+                    x: { grid: { color: '#232c42' } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // Accuracy per topic bar chart
+    const ctxTopic = document.getElementById('topicChart');
+    if (ctxTopic) {
+        new Chart(ctxTopic, {
+            type: 'bar',
+            data: {
+                labels: topics.length ? topics : ["No Data"],
+                datasets: [{
+                    label: 'Avg Accuracy %',
+                    data: topicScores.length ? topicScores : [0],
+                    backgroundColor: '#10b981',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, max: 100, grid: { color: '#232c42' } },
+                    x: { grid: { color: '#232c42' } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
