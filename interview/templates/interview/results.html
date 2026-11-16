@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Session Results — PrepForge{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="results-hero">
+        <span class="badge badge-company" style="margin-bottom: 1rem;">
+            Company Style: {{ session.company.name }}
+        </span>
+
+        <div class="results-score-big">{{ session.score|default:"0"|floatformat:1 }}%</div>
+        
+        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">
+            {{ solved_count }} of {{ total_count }} Solved
+        </h2>
+        <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 1.5rem; font-size: 0.95rem;">
+            Scored with strict partial-credit evaluation across all test cases. In-browser Pyodide execution verified every benchmark.
+        </p>
+
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <a href="{% url 'interview:settings' %}" class="btn btn-primary">
+                ⚡ Start New Session
+            </a>
+        </div>
+    </div>
+
+    <!-- Per-Question Breakdown Table -->
+    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">
+        Question Performance Breakdown
+    </h3>
+
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Difficulty</th>
+                <th>Problem</th>
+                <th>Topic</th>
+                <th>Tests Passed</th>
+                <th>Score</th>
+                <th>Time</th>
+                <th>Review</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td style="font-weight: 700; color: var(--text-muted);">{{ item.order }}</td>
+                <td>
+                    <span class="badge badge-{{ item.difficulty }}">{{ item.difficulty|upper }}</span>
+                </td>
+                <td style="font-weight: 600;">{{ item.title }}</td>
+                <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ item.topic }}</td>
+                <td>
+                    <span style="font-family: var(--font-mono); font-weight: 600; color: {% if item.score >= 100 %}#34d399{% elif item.score > 0 %}#fbbf24{% else %}#f87171{% endif %};">
+                        {{ item.tests_passed }}/{{ item.tests_total }}
+                    </span>
+                </td>
+                <td>
+                    <span style="font-weight: 700;">{{ item.score|floatformat:1 }}%</span>
+                </td>
+                <td style="font-size: 0.85rem; color: var(--text-secondary);">
+                    {% if item.time_taken_seconds %}
+                        {{ item.time_taken_seconds }}s
+                    {% else %}
+                        --
+                    {% endif %}
+                    {% if item.auto_submitted %}
+                        <span style="color: #f87171; font-size: 0.75rem; font-weight: 700;">(Auto)</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleCode('code-{{ forloop.counter }}')">
+                        View Code
+                    </button>
+                </td>
+            </tr>
+            <tr id="code-{{ forloop.counter }}" style="display: none; background: #161a24;">
+                <td colspan="8" style="padding: 1rem 1.5rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+                        Submitted Python Source:
+                    </div>
+                    <pre style="background: #0f131c; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 1rem; color: #a5f3fc; font-family: var(--font-mono); font-size: 0.85rem; overflow-x: auto; white-space: pre-wrap;">{{ item.code|default:"# No code submitted" }}</pre>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    No questions recorded for this session.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleCode(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    row.style.display = row.style.display === "none" ? "table-row" : "none";
+}
+</script>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Question {{ order }} of {{ total_questions }} — PrepForge{% endblock %}
+
+{% block extra_head %}
+<!-- Monaco Editor Loader -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Verification Loading Overlay -->
+<div id="verificationOverlay" class="verification-overlay">
+    <div class="spinner"></div>
+    <h2 id="overlayHeading" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">
+        Generating Question {{ order }} of {{ total_questions }}...
+    </h2>
+    <p id="overlaySubtext" style="color: var(--text-secondary); max-width: 480px; font-size: 0.95rem;">
+        Gemini is synthesizing a Python problem. Then Pyodide in-browser Web Worker will execute the reference solution against test cases to verify correctness before opening the editor.
+    </p>
+    <div id="overlayError" style="display: none; margin-top: 1.5rem;">
+        <button class="btn btn-secondary" onclick="retryFetchQuestion()">Retry Slot</button>
+    </div>
+</div>
+
+<div class="workspace-container">
+    <!-- Top Bar -->
+    <div class="workspace-topbar">
+        <div class="topbar-meta">
+            <span class="badge badge-company">Inspired by {{ session.company.name }}</span>
+            <span id="difficultyBadge" class="badge badge-medium">Loading...</span>
+            <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-secondary);">
+                Question <span id="currentOrder">{{ order }}</span> of {{ total_questions }}
+            </span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div id="timerDisplay" class="timer-pill">
+                <span>⏱️</span>
+                <span id="timerTime">--:--</span>
+            </div>
+            <button id="btnSubmitTop" class="btn btn-success btn-sm" onclick="handleSubmit()">
+                Submit Solution
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Workspace Split -->
+    <div class="workspace-main">
+        <!-- Left Panel: Problem Specification -->
+        <div class="problem-panel">
+            <h2 id="problemTitle">Loading Problem...</h2>
+            <div id="problemTopic" style="color: var(--accent-primary); font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;"></div>
+
+            <div class="section-label">Description</div>
+            <div id="problemDescription" class="problem-desc"></div>
+
+            <div class="section-label">Examples</div>
+            <div id="problemExamples"></div>
+
+            <div class="section-label">Constraints</div>
+            <div id="problemConstraints" class="constraints-box"></div>
+        </div>
+
+        <!-- Right Panel: Monaco Editor & Output Drawer -->
+        <div class="editor-panel">
+            <div class="editor-toolbar">
+                <span style="font-size: 0.85rem; color: #888888; font-family: var(--font-mono);">
+                    Python 3.12 (Pyodide in WebAssembly)
+                </span>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="btnRun" class="btn btn-secondary btn-sm" onclick="handleRun()">
+                        ▶ Run Examples
+                    </button>
+                    <button id="btnSubmit" class="btn btn-primary btn-sm" onclick="handleSubmit()">
+                        ✓ Submit
+                    </button>
+                </div>
+            </div>
+
+            <!-- Monaco Container -->
+            <div id="monaco-container" class="monaco-container"></div>
+
+            <!-- Bottom Console / Test Results Drawer -->
+            <div class="console-drawer">
+                <div class="drawer-tabs">
+                    <button class="drawer-tab active" onclick="switchDrawerTab('results')">Test Results</button>
+                    <button class="drawer-tab" onclick="switchDrawerTab('logs')">Console Output</button>
+                </div>
+
+                <div id="drawerResults" class="drawer-content">
+                    <div style="color: #666666; font-size: 0.85rem;">
+                        Click <strong>"Run Examples"</strong> to evaluate against visible test cases, or <strong>"Submit"</strong> to run all test cases.
+                    </div>
+                </div>
+
+                <div id="drawerLogs" class="drawer-content" style="display: none; white-space: pre-wrap; color: #a3e635;">
+                    <div style="color: #666666;">No output captured yet.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.SESSION_CONFIG = {
+        sessionId: {{ session.id }},
+        sessionQuestionId: {{ current_sq.id }},
+        order: {{ order }},
+        totalQuestions: {{ total_questions }},
+        csrfToken: '{{ csrf_token }}'
+    };
+</script>
+<script src="{% static 'interview/js/runner.js' %}"></script>
+<script src="{% static 'interview/js/timer.js' %}"></script>
+<script src="{% static 'interview/js/session.js' %}"></script>
+{% endblock %}
