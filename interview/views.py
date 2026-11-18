@@ -13,6 +13,7 @@ from .services.sessions import (
     get_question_time_limit,
     calculate_question_score,
     calculate_session_score,
+    get_user_excluded_question_titles,
 )
 from .services.gemini import (
     generate_question_with_gemini,
@@ -156,83 +157,106 @@ def next_question_api(request, session_id):
     question = current_sq.question
 
     if question.status == 'pending' and question.topic == "Pending Generation":
-        used_titles = list(
-            Question.objects.filter(session_appearances__session=session)
-            .exclude(id=question.id)
-            .values_list('title', flat=True)
+        used_titles = get_user_excluded_question_titles(
+            user=request.user,
+            current_session=session,
+            exclude_question_id=question.id
         )
+        norm_excluded = {t.lower().strip() for t in used_titles if t}
 
-        # 1. Turso Question Bank Check
-        bank_question = fetch_verified_question_from_bank(
-            company=session.company.name,
+        # 0. Local verified question check (reuse existing verified question if user hasn't solved it)
+        local_candidates = Question.objects.filter(
+            company=session.company,
             difficulty=question.difficulty,
-            exclude_titles=used_titles
-        )
+            status='verified'
+        ).exclude(topic="Pending Generation").prefetch_related('test_cases')
 
-        if bank_question:
-            # Served from Turso question bank
+        local_verified = None
+        for cand in local_candidates.order_by('?'):
+            if cand.title.lower().strip() not in norm_excluded and cand.test_cases.exists():
+                local_verified = cand
+                break
+
+        if local_verified:
             with transaction.atomic():
-                question.title = bank_question['title']
-                question.topic = bank_question['topic']
-                question.description = bank_question['description']
-                question.constraints = bank_question.get('constraints', '')
-                question.examples = bank_question.get('examples', [])
-                question.function_name = bank_question['function_name']
-                question.starter_code = bank_question['starter_code']
-                question.reference_solution = bank_question['reference_solution']
-                question.source = 'bank'
-                question.bank_id = bank_question.get('bank_id')
-                question.status = 'verified' # Pre-verified from bank
-                question.save()
-
-                question.test_cases.all().delete()
-                for tc in bank_question.get('test_cases', []):
-                    TestCase.objects.create(
-                        question=question,
-                        input_json=tc.get('input', []),
-                        expected_json=tc.get('expected'),
-                        kind=tc.get('kind', 'normal'),
-                        is_hidden=tc.get('hidden', False),
-                    )
+                old_placeholder = question
+                current_sq.question = local_verified
+                current_sq.save()
+                question = local_verified
+                if old_placeholder.topic == "Pending Generation":
+                    old_placeholder.delete()
         else:
-            # 2. Check Daily Generation Limit before Gemini call
-            allowed, count, limit = check_and_increment_daily_limit(request.user)
-            if not allowed:
-                return JsonResponse({
-                    'error': f'Daily generation limit reached ({limit}/{limit}). You can continue practicing with questions from the question bank.',
-                    'limit_reached': True
-                }, status=429)
-
-            # 3. Gemini Generation
-            generated = generate_question_with_gemini(
-                company_name=session.company.name,
-                style_notes=session.company.style_notes,
+            # 1. Turso Question Bank Check
+            bank_question = fetch_verified_question_from_bank(
+                company=session.company.name,
                 difficulty=question.difficulty,
-                used_titles=used_titles,
+                exclude_titles=used_titles
             )
 
-            with transaction.atomic():
-                question.title = generated['title']
-                question.topic = generated['topic']
-                question.description = generated['description']
-                question.constraints = generated.get('constraints', '')
-                question.examples = generated.get('examples', [])
-                question.function_name = generated['function_name']
-                question.starter_code = generated['starter_code']
-                question.reference_solution = generated['reference_solution']
-                question.source = 'gemini'
-                question.status = 'pending'
-                question.save()
+            if bank_question and bank_question['title'].lower().strip() not in norm_excluded:
+                # Served from Turso question bank
+                with transaction.atomic():
+                    question.title = bank_question['title']
+                    question.topic = bank_question['topic']
+                    question.description = bank_question['description']
+                    question.constraints = bank_question.get('constraints', '')
+                    question.examples = bank_question.get('examples', [])
+                    question.function_name = bank_question['function_name']
+                    question.starter_code = bank_question['starter_code']
+                    question.reference_solution = bank_question['reference_solution']
+                    question.source = 'bank'
+                    question.bank_id = bank_question.get('bank_id')
+                    question.status = 'verified' # Pre-verified from bank
+                    question.save()
 
-                question.test_cases.all().delete()
-                for tc in generated.get('test_cases', []):
-                    TestCase.objects.create(
-                        question=question,
-                        input_json=tc.get('input', []),
-                        expected_json=tc.get('expected'),
-                        kind=tc.get('kind', 'normal'),
-                        is_hidden=tc.get('hidden', False),
-                    )
+                    question.test_cases.all().delete()
+                    for tc in bank_question.get('test_cases', []):
+                        TestCase.objects.create(
+                            question=question,
+                            input_json=tc.get('input', []),
+                            expected_json=tc.get('expected'),
+                            kind=tc.get('kind', 'normal'),
+                            is_hidden=tc.get('hidden', False),
+                        )
+            else:
+                # 2. Check Daily Generation Limit before Gemini call
+                allowed, count, limit = check_and_increment_daily_limit(request.user)
+                if not allowed:
+                    return JsonResponse({
+                        'error': f'Daily generation limit reached ({limit}/{limit}). You can continue practicing with questions from the question bank.',
+                        'limit_reached': True
+                    }, status=429)
+
+                # 3. Gemini Generation
+                generated = generate_question_with_gemini(
+                    company_name=session.company.name,
+                    style_notes=session.company.style_notes,
+                    difficulty=question.difficulty,
+                    used_titles=used_titles,
+                )
+
+                with transaction.atomic():
+                    question.title = generated['title']
+                    question.topic = generated['topic']
+                    question.description = generated['description']
+                    question.constraints = generated.get('constraints', '')
+                    question.examples = generated.get('examples', [])
+                    question.function_name = generated['function_name']
+                    question.starter_code = generated['starter_code']
+                    question.reference_solution = generated['reference_solution']
+                    question.source = 'gemini'
+                    question.status = 'pending'
+                    question.save()
+
+                    question.test_cases.all().delete()
+                    for tc in generated.get('test_cases', []):
+                        TestCase.objects.create(
+                            question=question,
+                            input_json=tc.get('input', []),
+                            expected_json=tc.get('expected'),
+                            kind=tc.get('kind', 'normal'),
+                            is_hidden=tc.get('hidden', False),
+                        )
 
     test_cases_payload = []
     for tc in question.test_cases.all():
@@ -324,11 +348,13 @@ def verify_question_api(request, question_id):
         session_q = question.session_appearances.first()
         if session_q:
             session = session_q.session
-            used_titles = list(
-                Question.objects.filter(session_appearances__session=session)
-                .exclude(id=question.id)
-                .values_list('title', flat=True)
+            used_titles = get_user_excluded_question_titles(
+                user=session.user,
+                current_session=session,
+                exclude_question_id=question.id
             )
+            if question.title:
+                used_titles.append(question.title.strip())
 
             generated = generate_question_with_gemini(
                 company_name=session.company.name,

@@ -238,11 +238,27 @@ def validate_question_data(data: Dict[str, Any], used_titles: List[str] = None) 
     except SyntaxError as e:
         return False, f"Reference solution syntax error: {str(e)}"
 
-    # Title collision check
-    if used_titles and data.get('title') in used_titles:
-        return False, f"Duplicate title in session: {data.get('title')}"
+    # Title collision check (case-insensitive & stripped)
+    if used_titles:
+        normalized_used = {t.lower().strip() for t in used_titles if t}
+        if data.get('title', '').lower().strip() in normalized_used:
+            return False, f"Duplicate title or already solved: {data.get('title')}"
 
     return True, "Valid"
+
+
+def _get_unique_fallback_question(difficulty: str, company_name: str, used_titles: List[str] = None, suffix: str = "Style") -> Dict[str, Any]:
+    fallback = MOCK_FALLBACK_QUESTIONS.get(difficulty, MOCK_FALLBACK_QUESTIONS['medium']).copy()
+    fallback['difficulty'] = difficulty
+    base_title = f"{fallback['title']} ({company_name} {suffix})"
+    norm_used = {t.lower().strip() for t in (used_titles or []) if t}
+    candidate_title = base_title
+    counter = 2
+    while candidate_title.lower().strip() in norm_used:
+        candidate_title = f"{base_title} - Part {counter}"
+        counter += 1
+    fallback['title'] = candidate_title
+    return fallback
 
 
 def generate_question_with_gemini(
@@ -261,10 +277,7 @@ def generate_question_with_gemini(
 
     if not api_key:
         logger.warning("GEMINI_API_KEY is not configured. Serving high-fidelity mock question.")
-        fallback = MOCK_FALLBACK_QUESTIONS.get(difficulty, MOCK_FALLBACK_QUESTIONS['medium']).copy()
-        fallback['difficulty'] = difficulty
-        fallback['title'] = f"{fallback['title']} ({company_name} Style)"
-        return fallback
+        return _get_unique_fallback_question(difficulty, company_name, used_titles, suffix="Style")
 
     prompt = QUESTION_PROMPT_TEMPLATE.format(
         company=company_name,
@@ -319,10 +332,7 @@ def generate_question_with_gemini(
 
     except Exception as e:
         logger.error(f"Gemini generation error: {e}. Reverting to fallback question.")
-        fallback = MOCK_FALLBACK_QUESTIONS.get(difficulty, MOCK_FALLBACK_QUESTIONS['medium']).copy()
-        fallback['difficulty'] = difficulty
-        fallback['title'] = f"{fallback['title']} ({company_name} Edition)"
-        return fallback
+        return _get_unique_fallback_question(difficulty, company_name, used_titles, suffix="Edition")
 
 
 SUMMARY_PROMPT_TEMPLATE = """You are a senior technical interviewer providing feedback on a candidate's Python coding practice session.

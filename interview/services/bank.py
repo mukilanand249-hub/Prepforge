@@ -59,6 +59,7 @@ def fetch_verified_question_from_bank(company: str, difficulty: str, exclude_tit
         return None
 
     exclude_titles = exclude_titles or []
+    norm_exclude = {t.lower().strip() for t in exclude_titles if t}
     try:
         query = "SELECT id, title, topic, description, constraints, examples_json, function_name, starter_code, reference_solution FROM questions WHERE company = ? AND difficulty = ? AND verified = 1"
         res = client.execute(query, [company, difficulty])
@@ -66,7 +67,7 @@ def fetch_verified_question_from_bank(company: str, difficulty: str, exclude_tit
         for row in res.rows:
             q_id = row[0]
             title = row[1]
-            if title in exclude_titles:
+            if title.lower().strip() in norm_exclude:
                 continue
 
             # Fetch test cases for this question

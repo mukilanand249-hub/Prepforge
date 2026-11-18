@@ -66,3 +66,42 @@ def calculate_session_score(scores: List[float]) -> float:
     if not scores:
         return 0.0
     return round(sum(scores) / len(scores), 2)
+
+
+def get_user_excluded_question_titles(user, current_session=None, exclude_question_id=None) -> List[str]:
+    """
+    Returns question titles that must not be served to this user:
+    1. Any question the user has already solved (score >= 100.0 or 100% tests passed) across any session.
+    2. Any question already assigned in the current session.
+    """
+    from django.db.models import F, Q
+    from ..models import SessionQuestion, Question
+
+    excluded = set()
+
+    if user and user.is_authenticated:
+        # Questions successfully solved by the user across any previous or current session
+        solved_sqs = (
+            SessionQuestion.objects.filter(session__user=user)
+            .filter(Q(score__gte=100.0) | (Q(tests_total__gt=0) & Q(tests_passed=F('tests_total'))))
+            .exclude(question__topic="Pending Generation")
+            .select_related('question')
+        )
+        for sq in solved_sqs:
+            if sq.question and sq.question.title:
+                t = sq.question.title.strip()
+                if t and not t.startswith("Question "):
+                    excluded.add(t)
+
+    # Questions already in the current session (to avoid duplicate questions within the same session)
+    if current_session:
+        qs_in_session = Question.objects.filter(session_appearances__session=current_session)
+        if exclude_question_id:
+            qs_in_session = qs_in_session.exclude(id=exclude_question_id)
+        for t in qs_in_session.exclude(topic="Pending Generation").values_list('title', flat=True):
+            if t:
+                cleaned = t.strip()
+                if cleaned and not cleaned.startswith("Question "):
+                    excluded.add(cleaned)
+
+    return list(excluded)
