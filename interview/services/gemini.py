@@ -27,7 +27,7 @@ Do NOT repeat these titles: {used_titles}
 Rules:
 - The solution must be a single pure Python function named {function_name_hint}.
 - No input(), no file access, no network, no external libraries (standard library only).
-- Inputs and outputs must be JSON-serializable (numbers, strings, lists, dicts, booleans, null).
+- Inputs and outputs must be pure JSON literal values (numbers, strings, lists, dicts, booleans, null). Do NOT use Python expressions like list(range(...)) or range(...) or set(); write raw JSON literals like [1, 2, 3] or repetitive strings.
 - Provide 3 examples with clear explanation.
 - Provide 8 to 12 test cases:
   * at least 3 "normal" test cases
@@ -136,17 +136,34 @@ MOCK_FALLBACK_QUESTIONS = {
 def clean_json_response(raw_text: str) -> str:
     """
     Strips markdown code fences (```json ... ```) or whitespace.
+    Safely converts accidental Python range expressions into valid JSON lists.
     """
     text = raw_text.strip()
     if text.startswith('```'):
-        # Strip opening line like ```json or ```
         lines = text.split('\n')
         if len(lines) >= 2:
             lines = lines[1:]
         text = '\n'.join(lines)
     if text.endswith('```'):
         text = text[:-3]
-    return text.strip()
+    text = text.strip()
+
+    # Expand list(range(start, stop[, step])) or list(range(stop))
+    def range_replacer(m):
+        try:
+            p1 = int(m.group(1))
+            p2 = int(m.group(2)) if m.group(2) else None
+            p3 = int(m.group(3)) if m.group(3) else 1
+            if p2 is None:
+                items = list(range(min(p1, 200)))
+            else:
+                items = list(range(p1, min(p2, p1 + 200), p3))
+            return json.dumps(items)
+        except Exception:
+            return "[]"
+
+    text = re.sub(r'list\(range\((\d+)(?:,\s*(\d+))?(?:,\s*(\d+))?\)\)', range_replacer, text)
+    return text
 
 
 def validate_question_data(data: Dict[str, Any], used_titles: List[str] = None) -> Tuple[bool, str]:
@@ -263,16 +280,33 @@ def generate_question_with_gemini(
         from google.genai import types
 
         client = genai.Client(api_key=api_key)
-        model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.5-flash')
+        model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-3.5-flash')
 
-        response = client.models.generate_content(
-            model=model_name,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=0.7,
-            )
-        )
+        candidate_models = [model_name]
+        if 'gemini-3.5-flash-lite' not in candidate_models:
+            candidate_models.append('gemini-3.5-flash-lite')
+
+        response = None
+        last_error = None
+        for m in candidate_models:
+            try:
+                response = client.models.generate_content(
+                    model=m,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.7,
+                        max_output_tokens=4096,
+                    )
+                )
+                if response and response.text:
+                    break
+            except Exception as call_err:
+                last_error = call_err
+                logger.warning(f"Model {m} failed: {call_err}. Trying next candidate...")
+
+        if not response or not response.text:
+            raise last_error or ValueError("Empty response from Gemini models")
 
         cleaned_text = clean_json_response(response.text)
         data = json.loads(cleaned_text)
@@ -346,7 +380,7 @@ def generate_ai_performance_summary(company: str, session_stats: List[Dict[str, 
         from google.genai import types
 
         client = genai.Client(api_key=api_key)
-        model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.5-flash')
+        model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-3.5-flash')
 
         prompt = SUMMARY_PROMPT_TEMPLATE.format(
             company=company,
