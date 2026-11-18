@@ -1,143 +1,151 @@
 {% extends "base.html" %}
 
-{% block title %}Session Results — PrepForge{% endblock %}
+{% block title %}Performance Diagnostics — PrepForge{% endblock %}
 
 {% block content %}
 <div class="results-container">
     <div class="results-hero">
-        <span class="badge badge-company" style="margin-bottom: 1rem;">
-            Company Style: {{ session.company.name }}
+        <span class="badge badge-company" style="margin-bottom: 1.25rem;">
+            EVALUATION ARCHETYPE: {{ session.company.name|upper }}
         </span>
 
         <div class="results-score-big">{{ session.score|default:"0"|floatformat:1 }}%</div>
         
-        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">
-            {{ solved_count }} of {{ total_count }} Solved
+        <h2 style="font-family: var(--font-display); font-size: 1.85rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em;">
+            {{ solved_count }} OF {{ total_count }} CHALLENGES FULLY SOLVED
         </h2>
-        <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 1.5rem; font-size: 0.95rem;">
-            Scored with strict partial-credit evaluation across all test cases. In-browser Pyodide execution verified every benchmark.
+        <p style="color: var(--text-secondary); max-width: 540px; margin: 0 auto 1.75rem; font-size: 0.96rem;">
+            Calculated with granular test case execution via in-browser Pyodide WebAssembly. Zero server-side execution vulnerability.
         </p>
 
         <div style="display: flex; gap: 1rem; justify-content: center;">
             <a href="{% url 'interview:settings' %}" class="btn btn-primary">
-                ⚡ Start New Session
+                ⚡ INITIALIZE NEW SESSION
             </a>
             <a href="{% url 'interview:dashboard' %}" class="btn btn-secondary">
-                📊 View History Dashboard
+                📊 VIEW ANALYTICS DASHBOARD
             </a>
         </div>
     </div>
 
     <!-- AI Performance Summary (Phase 2) -->
-    <div class="card" style="margin-bottom: 2rem; border-color: rgba(56, 189, 248, 0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
-                <span>🤖</span> AI Performance Summary
-            </h3>
+    <div class="card" style="margin-bottom: 2.5rem; border-color: var(--border-glass-strong);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div class="section-label" style="margin-bottom: 0;">
+                <span>// GEMINI SYNTHESIZED DIAGNOSTICS</span>
+            </div>
             <button id="btnRegenSummary" class="btn btn-secondary btn-sm" onclick="regenerateSummary()">
-                🔄 Refresh Analysis
+                🔄 RE-ANALYZE PERFORMANCE
             </button>
         </div>
 
-        <div id="summaryContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem;">
+        <div id="summaryContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
             {% if ai_summary %}
-                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 1rem;">
-                    <div style="color: #34d399; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem;">✨ Observed Strengths</div>
-                    <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                <div style="background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.22); border-radius: var(--radius-sm); padding: 1.25rem;">
+                    <div style="color: var(--emerald-acid); font-family: var(--font-mono); font-weight: 700; margin-bottom: 0.65rem; font-size: 0.82rem; letter-spacing: 0.05em;">
+                        ✦ OBSERVED STRENGTHS
+                    </div>
+                    <ul style="padding-left: 1.2rem; font-size: 0.88rem; color: #d1fae5; line-height: 1.6;">
                         {% for s in ai_summary.strengths %}
-                            <li style="margin-bottom: 0.35rem;">{{ s }}</li>
+                            <li style="margin-bottom: 0.4rem;">{{ s }}</li>
                         {% endfor %}
                     </ul>
                 </div>
 
-                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 1rem;">
-                    <div style="color: #fbbf24; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem;">🎯 Areas for Focus</div>
-                    <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.22); border-radius: var(--radius-sm); padding: 1.25rem;">
+                    <div style="color: #fbbf24; font-family: var(--font-mono); font-weight: 700; margin-bottom: 0.65rem; font-size: 0.82rem; letter-spacing: 0.05em;">
+                        ▲ TARGETED AREAS FOR FOCUS
+                    </div>
+                    <ul style="padding-left: 1.2rem; font-size: 0.88rem; color: #fef3c7; line-height: 1.6;">
                         {% for w in ai_summary.weak_topics %}
-                            <li style="margin-bottom: 0.35rem;">{{ w }}</li>
+                            <li style="margin-bottom: 0.4rem;">{{ w }}</li>
                         {% endfor %}
                     </ul>
                 </div>
 
-                <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 1rem;">
-                    <div style="color: #38bdf8; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem;">🚀 Recommended Next Steps</div>
-                    <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                <div style="background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.22); border-radius: var(--radius-sm); padding: 1.25rem;">
+                    <div style="color: #38bdf8; font-family: var(--font-mono); font-weight: 700; margin-bottom: 0.65rem; font-size: 0.82rem; letter-spacing: 0.05em;">
+                        ■ STRATEGIC NEXT STEPS
+                    </div>
+                    <ul style="padding-left: 1.2rem; font-size: 0.88rem; color: #e0f2fe; line-height: 1.6;">
                         {% for n in ai_summary.next_steps %}
-                            <li style="margin-bottom: 0.35rem;">{{ n }}</li>
+                            <li style="margin-bottom: 0.4rem;">{{ n }}</li>
                         {% endfor %}
                     </ul>
                 </div>
             {% else %}
-                <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 1rem;">
-                    Click "Refresh Analysis" to synthesize AI feedback with Gemini.
+                <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 1.5rem; font-family: var(--font-mono); font-size: 0.88rem;">
+                    [AWAITING AI DEBRIEF] — Execute [RE-ANALYZE PERFORMANCE] to synthesize candidate telemetry with Gemini.
                 </div>
             {% endif %}
         </div>
     </div>
 
     <!-- Per-Question Breakdown Table -->
-    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">
-        Question Performance Breakdown
-    </h3>
+    <div class="section-label" style="margin-bottom: 0.85rem;">
+        <span>// SESSION BREAKDOWN & TELEMETRY</span>
+    </div>
 
     <table class="results-table">
         <thead>
             <tr>
                 <th>#</th>
                 <th>Difficulty</th>
-                <th>Problem</th>
-                <th>Topic</th>
-                <th>Tests Passed</th>
+                <th>Problem Specification</th>
+                <th>Topic Domain</th>
+                <th>Benchmarks</th>
                 <th>Score</th>
-                <th>Time</th>
-                <th>Review</th>
+                <th>Runtime</th>
+                <th>Inspection</th>
             </tr>
         </thead>
         <tbody>
             {% for item in items %}
             <tr>
-                <td style="font-weight: 700; color: var(--text-muted);">{{ item.order }}</td>
+                <td style="font-family: var(--font-mono); font-weight: 700; color: var(--text-muted);">{{ item.order }}</td>
                 <td>
                     <span class="badge badge-{{ item.difficulty }}">{{ item.difficulty|upper }}</span>
                 </td>
-                <td style="font-weight: 600;">{{ item.title }}</td>
-                <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ item.topic }}</td>
+                <td style="font-weight: 700; color: var(--text-pure);">{{ item.title }}</td>
+                <td style="color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.82rem;">{{ item.topic }}</td>
                 <td>
-                    <span style="font-family: var(--font-mono); font-weight: 600; color: {% if item.score >= 100 %}#34d399{% elif item.score > 0 %}#fbbf24{% else %}#f87171{% endif %};">
-                        {{ item.tests_passed }}/{{ item.tests_total }}
+                    <span style="font-family: var(--font-mono); font-weight: 700; color: {% if item.score >= 100 %}var(--emerald-acid){% elif item.score > 0 %}#fbbf24{% else %}#ff6b6b{% endif %};">
+                        {{ item.tests_passed }} / {{ item.tests_total }}
                     </span>
                 </td>
                 <td>
-                    <span style="font-weight: 700;">{{ item.score|floatformat:1 }}%</span>
+                    <span style="font-family: var(--font-mono); font-weight: 800; color: var(--text-pure);">
+                        {{ item.score|floatformat:1 }}%
+                    </span>
                 </td>
-                <td style="font-size: 0.85rem; color: var(--text-secondary);">
+                <td style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-secondary);">
                     {% if item.time_taken_seconds %}
                         {{ item.time_taken_seconds }}s
                     {% else %}
                         --
                     {% endif %}
                     {% if item.auto_submitted %}
-                        <span style="color: #f87171; font-size: 0.75rem; font-weight: 700;">(Auto)</span>
+                        <span style="color: #ff6b6b; font-weight: 700;">[AUTO]</span>
                     {% endif %}
                 </td>
                 <td>
                     <button class="btn btn-secondary btn-sm" onclick="toggleCode('code-{{ forloop.counter }}')">
-                        View Code
+                        INSPECT CODE
                     </button>
                 </td>
             </tr>
-            <tr id="code-{{ forloop.counter }}" style="display: none; background: #161a24;">
-                <td colspan="8" style="padding: 1rem 1.5rem;">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
-                        Submitted Python Source:
+            <tr id="code-{{ forloop.counter }}" style="display: none; background: rgba(3, 8, 5, 0.95);">
+                <td colspan="8" style="padding: 1.25rem 1.5rem;">
+                    <div style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; color: var(--emerald-bright); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.65rem;">
+                        SUBMITTED PYTHON AST:
                     </div>
-                    <pre style="background: #0f131c; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 1rem; color: #a5f3fc; font-family: var(--font-mono); font-size: 0.85rem; overflow-x: auto; white-space: pre-wrap;">{{ item.code|default:"# No code submitted" }}</pre>
+                    <pre style="background: #020503; border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 1.25rem; color: var(--emerald-acid); font-family: var(--font-mono); font-size: 0.86rem; overflow-x: auto; white-space: pre-wrap;">{{ item.code|default:"# No code submitted" }}</pre>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                    No questions recorded for this session.
+                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem; font-family: var(--font-mono);">
+                    [NO SUBMISSIONS RECORDED FOR THIS SESSION]
                 </td>
             </tr>
             {% endfor %}
@@ -157,7 +165,7 @@ function toggleCode(rowId) {
 async function regenerateSummary() {
     const btn = document.getElementById("btnRegenSummary");
     btn.disabled = true;
-    btn.textContent = "Analyzing...";
+    btn.textContent = "ANALYZING...";
 
     try {
         const resp = await fetch("/api/sessions/{{ session.id }}/summary/", {
@@ -175,7 +183,7 @@ async function regenerateSummary() {
         console.error("Error generating summary:", e);
     } finally {
         btn.disabled = false;
-        btn.textContent = "🔄 Refresh Analysis";
+        btn.textContent = "🔄 RE-ANALYZE PERFORMANCE";
     }
 }
 </script>

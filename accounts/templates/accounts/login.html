@@ -1,39 +1,42 @@
 {% extends "base.html" %}
 
-{% block title %}Sign In — PrepForge{% endblock %}
+{% block title %}Authentication // Gateway — PrepForge{% endblock %}
 
 {% block content %}
 <div class="auth-wrapper">
     <div class="card">
-        <h1 class="card-title">Sign In</h1>
-        <p class="card-subtitle">Resume your Python interview preparation sessions.</p>
+        <div class="section-label" style="margin-bottom: 0.5rem;">
+            <span>// ACCESS CONTROL</span>
+        </div>
+        <h1 class="card-title">AUTHENTICATE</h1>
+        <p class="card-subtitle">Access your company-aware algorithmic crucible sessions.</p>
 
         <form method="post">
             {% csrf_token %}
             
             {% if form.errors %}
                 <div class="alert alert-error">
-                    Invalid username or password. Please try again.
+                    <span class="alert-icon">▲</span> Invalid credentials supplied. Access denied.
                 </div>
             {% endif %}
 
             <div class="form-group">
-                <label class="form-label" for="id_username">Username</label>
-                <input type="text" name="username" id="id_username" class="form-input" required autofocus>
+                <label class="form-label" for="id_username">Operator Username</label>
+                <input type="text" name="username" id="id_username" class="form-input" required autofocus placeholder="username">
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="id_password">Password</label>
-                <input type="password" name="password" id="id_password" class="form-input" required>
+                <label class="form-label" for="id_password">Access Key / Password</label>
+                <input type="password" name="password" id="id_password" class="form-input" required placeholder="••••••••••••">
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
-                Sign In
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.85rem;">
+                INITIALIZE SESSION ➔
             </button>
         </form>
 
-        <div style="margin-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
-            Don't have an account? <a href="{% url 'register' %}" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">Create one</a>
+        <div style="margin-top: 2rem; text-align: center; font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono);">
+            New operator? <a href="{% url 'register' %}" style="color: var(--emerald-acid); text-decoration: none; font-weight: 700;">[PROVISION ACCOUNT]</a>
         </div>
     </div>
 </div>

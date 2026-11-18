@@ -7,22 +7,34 @@
     <title>{% block title %}PrepForge — Company-Aware Python Interview IDE{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'interview/css/app.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body class="app-body">
+    <!-- Atmospheric Ambient Lighting -->
+    <div class="ambient-mesh"></div>
+    <div class="ambient-scanline"></div>
+
     <nav class="app-nav">
         <div class="nav-container">
             <a href="{% url 'interview:settings' %}" class="brand-logo">
-                <span class="logo-mark">⚡</span>
-                <span class="brand-text">Prep<strong>Forge</strong></span>
-                <span class="brand-tag">Python IDE</span>
+                <span class="logo-mark">
+                    <span class="logo-inner">▲</span>
+                </span>
+                <span class="brand-text">PREP<span class="brand-accent">FORGE</span></span>
+                <span class="engine-badge">
+                    <span class="engine-dot"></span>
+                    PYODIDE V0.26
+                </span>
             </a>
 
             <div class="nav-actions">
                 {% if user.is_authenticated %}
-                    <span class="user-pill">👤 {{ user.username }}</span>
+                    <span class="user-pill">
+                        <span class="user-status-dot"></span>
+                        {{ user.username }}
+                    </span>
                     <a href="{% url 'interview:settings' %}" class="nav-link">New Session</a>
                     <a href="{% url 'interview:dashboard' %}" class="nav-link">Dashboard</a>
                     <a href="{% url 'logout' %}" class="nav-link nav-link-logout">Sign Out</a>
@@ -38,6 +50,7 @@
     <div class="messages-container">
         {% for message in messages %}
             <div class="alert alert-{{ message.tags|default:'info' }}">
+                <span class="alert-icon">✦</span>
                 {{ message }}
             </div>
         {% endfor %}

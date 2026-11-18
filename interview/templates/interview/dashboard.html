@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Performance Dashboard — PrepForge{% endblock %}
+{% block title %}Telemetry & Analytics — PrepForge{% endblock %}
 
 {% block extra_head %}
 <!-- Chart.js CDN -->
@@ -8,57 +8,77 @@
 {% endblock %}
 
 {% block content %}
-<div class="settings-container" style="max-width: 1100px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="settings-container" style="max-width: 1140px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
         <div>
-            <h1 style="font-size: 2rem; font-weight: 800;">Candidate History & Analytics</h1>
-            <p style="color: var(--text-secondary); font-size: 0.95rem;">Track score progression, topic accuracy, and algorithmic timing across all interview sessions.</p>
+            <h1 style="font-family: var(--font-display); font-size: 2.25rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text-pure);">
+                CANDIDATE TELEMETRY & HISTORICAL ANALYTICS
+            </h1>
+            <p style="color: var(--text-secondary); font-size: 0.98rem;">Longitudinal score progression, topic accuracy, and algorithmic execution benchmarks.</p>
         </div>
         <a href="{% url 'interview:settings' %}" class="btn btn-primary">
-            ⚡ New Practice Session
+            ⚡ NEW PRACTICE SESSION
         </a>
     </div>
 
     <!-- Stat Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-        <div class="card" style="padding: 1.25rem;">
-            <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">Total Sessions</div>
-            <div style="font-size: 2.25rem; font-weight: 800; color: #38bdf8;">{{ total_sessions }}</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+        <div class="card" style="padding: 1.5rem;">
+            <div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em;">
+                TOTAL SESSIONS COMPLETED
+            </div>
+            <div style="font-family: var(--font-display); font-size: 2.75rem; font-weight: 800; color: var(--text-pure); line-height: 1.1; margin-top: 0.4rem;">
+                {{ total_sessions }}
+            </div>
         </div>
 
-        <div class="card" style="padding: 1.25rem;">
-            <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">Average Score</div>
-            <div style="font-size: 2.25rem; font-weight: 800; color: #10b981;">{{ avg_session_score }}%</div>
+        <div class="card" style="padding: 1.5rem;">
+            <div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em;">
+                AGGREGATE BENCHMARK SCORE
+            </div>
+            <div style="font-family: var(--font-display); font-size: 2.75rem; font-weight: 800; color: var(--emerald-acid); line-height: 1.1; margin-top: 0.4rem; text-shadow: 0 0 20px rgba(0, 255, 136, 0.4);">
+                {{ avg_session_score }}%
+            </div>
         </div>
 
-        <div class="card" style="padding: 1.25rem;">
-            <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">Auto-Submit Rate</div>
-            <div style="font-size: 2.25rem; font-weight: 800; color: #f59e0b;">{{ auto_submit_rate }}%</div>
+        <div class="card" style="padding: 1.5rem;">
+            <div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em;">
+                TIMEOUT / AUTO-SUBMISSION RATE
+            </div>
+            <div style="font-family: var(--font-display); font-size: 2.75rem; font-weight: 800; color: #fbbf24; line-height: 1.1; margin-top: 0.4rem;">
+                {{ auto_submit_rate }}%
+            </div>
         </div>
     </div>
 
     <!-- Charts Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 1.75rem; margin-bottom: 3rem;">
         <div class="card">
-            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">Session Score Progression</h3>
-            <canvas id="scoreChart" height="240"></canvas>
+            <div class="section-label">
+                <span>// SCORE VELOCITY CHRONOLOGY</span>
+            </div>
+            <canvas id="scoreChart" height="230"></canvas>
         </div>
 
         <div class="card">
-            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">Accuracy by Topic (%)</h3>
-            <canvas id="topicChart" height="240"></canvas>
+            <div class="section-label">
+                <span>// ACCURACY BY DOMAIN TOPIC (%)</span>
+            </div>
+            <canvas id="topicChart" height="230"></canvas>
         </div>
     </div>
 
     <!-- Recent Sessions Table -->
-    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Recent Practice Sessions</h3>
+    <div class="section-label" style="margin-bottom: 0.85rem;">
+        <span>// HISTORICAL SESSION ARCHIVES</span>
+    </div>
     <table class="results-table">
         <thead>
             <tr>
-                <th>Date</th>
-                <th>Company</th>
+                <th>Timestamp</th>
+                <th>Company Archetype</th>
                 <th>Difficulty</th>
-                <th>Questions</th>
+                <th>Slots</th>
                 <th>Score</th>
                 <th>Action</th>
             </tr>
@@ -66,23 +86,23 @@
         <tbody>
             {% for s in recent_sessions %}
             <tr>
-                <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ s.started_at|date:"M d, Y - H:i" }}</td>
-                <td style="font-weight: 600;">{{ s.company.name }}</td>
+                <td style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.82rem;">{{ s.started_at|date:"Y-m-d H:i" }}</td>
+                <td style="font-weight: 700; color: var(--text-pure);">{{ s.company.name }}</td>
                 <td><span class="badge badge-{{ s.difficulty_mode }}">{{ s.difficulty_mode|upper }}</span></td>
-                <td>{{ s.num_questions }}</td>
-                <td style="font-weight: 700; color: {% if s.score >= 80 %}#34d399{% elif s.score >= 50 %}#fbbf24{% else %}#f87171{% endif %};">
+                <td style="font-family: var(--font-mono); font-size: 0.85rem;">{{ s.num_questions }}</td>
+                <td style="font-family: var(--font-mono); font-weight: 800; color: {% if s.score >= 80 %}var(--emerald-acid){% elif s.score >= 50 %}#fbbf24{% else %}#ff6b6b{% endif %};">
                     {{ s.score|default:"0"|floatformat:1 }}%
                 </td>
                 <td>
                     <a href="{% url 'interview:results' session_id=s.id %}" class="btn btn-secondary btn-sm">
-                        View Results
+                        VIEW METRICS
                     </a>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                    No completed practice sessions found. Complete your first session to unlock trends!
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem; font-family: var(--font-mono);">
+                    [NO HISTORICAL SESSIONS] — Complete your first interview crucible session to generate telemetry.
                 </td>
             </tr>
             {% endfor %}
@@ -107,20 +127,32 @@ document.addEventListener("DOMContentLoaded", function() {
             data: {
                 labels: dates.length ? dates : ["Start"],
                 datasets: [{
-                    label: 'Session Score %',
+                    label: 'Score %',
                     data: scores.length ? scores : [0],
-                    borderColor: '#38bdf8',
-                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                    tension: 0.3,
+                    borderColor: '#00ff88',
+                    borderWidth: 2,
+                    backgroundColor: 'rgba(0, 255, 136, 0.08)',
+                    tension: 0.2,
                     fill: true,
-                    pointBackgroundColor: '#38bdf8'
+                    pointBackgroundColor: '#00ff88',
+                    pointBorderColor: '#020402',
+                    pointBorderWidth: 2,
+                    pointRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
-                    y: { beginAtZero: true, max: 100, grid: { color: '#232c42' } },
-                    x: { grid: { color: '#232c42' } }
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100, 
+                        grid: { color: 'rgba(52, 211, 153, 0.08)' },
+                        ticks: { color: '#5e7364', font: { family: "'JetBrains Mono'" } }
+                    },
+                    x: { 
+                        grid: { color: 'rgba(52, 211, 153, 0.08)' },
+                        ticks: { color: '#5e7364', font: { family: "'JetBrains Mono'" } }
+                    }
                 },
                 plugins: { legend: { display: false } }
             }
@@ -138,14 +170,22 @@ document.addEventListener("DOMContentLoaded", function() {
                     label: 'Avg Accuracy %',
                     data: topicScores.length ? topicScores : [0],
                     backgroundColor: '#10b981',
-                    borderRadius: 4
+                    borderRadius: 2
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
-                    y: { beginAtZero: true, max: 100, grid: { color: '#232c42' } },
-                    x: { grid: { color: '#232c42' } }
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100, 
+                        grid: { color: 'rgba(52, 211, 153, 0.08)' },
+                        ticks: { color: '#5e7364', font: { family: "'JetBrains Mono'" } }
+                    },
+                    x: { 
+                        grid: { color: 'rgba(52, 211, 153, 0.08)' },
+                        ticks: { color: '#5e7364', font: { family: "'JetBrains Mono'" } }
+                    }
                 },
                 plugins: { legend: { display: false } }
             }

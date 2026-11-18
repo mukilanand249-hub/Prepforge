@@ -9,17 +9,17 @@
 {% endblock %}
 
 {% block content %}
-<!-- Verification Loading Overlay -->
+<!-- Holographic Verification Overlay -->
 <div id="verificationOverlay" class="verification-overlay">
     <div class="spinner"></div>
-    <h2 id="overlayHeading" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">
-        Generating Question {{ order }} of {{ total_questions }}...
+    <h2 id="overlayHeading" style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; color: var(--text-pure); margin-bottom: 0.5rem; letter-spacing: -0.02em;">
+        SYNTHESIZING PROBLEM // SLOT {{ order }} OF {{ total_questions }}
     </h2>
-    <p id="overlaySubtext" style="color: var(--text-secondary); max-width: 480px; font-size: 0.95rem;">
-        Gemini is synthesizing a Python problem. Then Pyodide in-browser Web Worker will execute the reference solution against test cases to verify correctness before opening the editor.
+    <p id="overlaySubtext" style="color: var(--text-secondary); max-width: 520px; font-size: 0.95rem; line-height: 1.6; font-family: var(--font-mono);">
+        Generating structured Python specification via Gemini. Executing reference solution against test cases in Pyodide WebAssembly sandbox...
     </p>
     <div id="overlayError" style="display: none; margin-top: 1.5rem;">
-        <button class="btn btn-secondary" onclick="retryFetchQuestion()">Retry Slot</button>
+        <button class="btn btn-secondary" onclick="retryFetchQuestion()">RETRY SLOT GENERATION</button>
     </div>
 </div>
 
@@ -27,20 +27,20 @@
     <!-- Top Bar -->
     <div class="workspace-topbar">
         <div class="topbar-meta">
-            <span class="badge badge-company">Inspired by {{ session.company.name }}</span>
-            <span id="difficultyBadge" class="badge badge-medium">Loading...</span>
-            <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-secondary);">
-                Question <span id="currentOrder">{{ order }}</span> of {{ total_questions }}
+            <span class="badge badge-company">ARCHETYPE: {{ session.company.name|upper }}</span>
+            <span id="difficultyBadge" class="badge badge-medium">INITIALIZING</span>
+            <span style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">
+                PROBLEM <span id="currentOrder" style="color: var(--emerald-acid);">{{ order }}</span> OF {{ total_questions }}
             </span>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1.25rem;">
             <div id="timerDisplay" class="timer-pill">
-                <span>⏱️</span>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">T-MINUS</span>
                 <span id="timerTime">--:--</span>
             </div>
             <button id="btnSubmitTop" class="btn btn-success btn-sm" onclick="handleSubmit()">
-                Submit Solution
+                SUBMIT FOR GRADING
             </button>
         </div>
     </div>
@@ -49,31 +49,40 @@
     <div class="workspace-main">
         <!-- Left Panel: Problem Specification -->
         <div class="problem-panel">
-            <h2 id="problemTitle">Loading Problem...</h2>
-            <div id="problemTopic" style="color: var(--accent-primary); font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;"></div>
+            <h2 id="problemTitle">Generating Problem...</h2>
+            <div id="problemTopic" style="color: var(--emerald-bright); font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; margin-bottom: 1.5rem; letter-spacing: 0.05em; text-transform: uppercase;"></div>
 
-            <div class="section-label">Description</div>
+            <div class="section-label">
+                <span>01 // SPECIFICATION</span>
+            </div>
             <div id="problemDescription" class="problem-desc"></div>
 
-            <div class="section-label">Examples</div>
+            <div class="section-label">
+                <span>02 // VISIBLE EXAMPLES</span>
+            </div>
             <div id="problemExamples"></div>
 
-            <div class="section-label">Constraints</div>
+            <div class="section-label">
+                <span>03 // CONSTRAINTS & LIMITS</span>
+            </div>
             <div id="problemConstraints" class="constraints-box"></div>
         </div>
 
         <!-- Right Panel: Monaco Editor & Output Drawer -->
         <div class="editor-panel">
             <div class="editor-toolbar">
-                <span style="font-size: 0.85rem; color: #888888; font-family: var(--font-mono);">
-                    Python 3.12 (Pyodide in WebAssembly)
-                </span>
-                <div style="display: flex; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span class="engine-dot"></span>
+                    <span style="font-size: 0.75rem; color: var(--emerald-bright); font-family: var(--font-mono); letter-spacing: 0.05em; font-weight: 700;">
+                        PYTHON 3.12 (PYODIDE WASM)
+                    </span>
+                </div>
+                <div style="display: flex; gap: 0.6rem;">
                     <button id="btnRun" class="btn btn-secondary btn-sm" onclick="handleRun()">
-                        ▶ Run Examples
+                        ▶ RUN EXAMPLES
                     </button>
                     <button id="btnSubmit" class="btn btn-primary btn-sm" onclick="handleSubmit()">
-                        ✓ Submit
+                        ✓ SUBMIT SOLUTION
                     </button>
                 </div>
             </div>
@@ -84,18 +93,22 @@
             <!-- Bottom Console / Test Results Drawer -->
             <div class="console-drawer">
                 <div class="drawer-tabs">
-                    <button class="drawer-tab active" onclick="switchDrawerTab('results')">Test Results</button>
-                    <button class="drawer-tab" onclick="switchDrawerTab('logs')">Console Output</button>
+                    <button class="drawer-tab active" onclick="switchDrawerTab('results')">
+                        // TEST RESULTS
+                    </button>
+                    <button class="drawer-tab" onclick="switchDrawerTab('logs')">
+                        // STDOUT CONSOLE
+                    </button>
                 </div>
 
                 <div id="drawerResults" class="drawer-content">
-                    <div style="color: #666666; font-size: 0.85rem;">
-                        Click <strong>"Run Examples"</strong> to evaluate against visible test cases, or <strong>"Submit"</strong> to run all test cases.
+                    <div style="color: var(--text-muted); font-size: 0.85rem; font-family: var(--font-mono);">
+                        Execute <strong>[RUN EXAMPLES]</strong> to evaluate against visible cases, or <strong>[SUBMIT SOLUTION]</strong> for full grading.
                     </div>
                 </div>
 
-                <div id="drawerLogs" class="drawer-content" style="display: none; white-space: pre-wrap; color: #a3e635;">
-                    <div style="color: #666666;">No output captured yet.</div>
+                <div id="drawerLogs" class="drawer-content" style="display: none; white-space: pre-wrap; color: var(--emerald-acid); font-family: var(--font-mono); font-size: 0.82rem;">
+                    <div style="color: var(--text-muted);">[NO ACTIVE STDOUT OUTPUT]</div>
                 </div>
             </div>
         </div>

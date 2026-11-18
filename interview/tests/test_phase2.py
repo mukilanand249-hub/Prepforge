@@ -95,4 +95,4 @@ class Phase2FeatureTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Amazon')
         self.assertContains(resp, 'Hash Maps')
-        self.assertContains(resp, 'Candidate History & Analytics')
+        self.assertContains(resp, 'CANDIDATE TELEMETRY & HISTORICAL ANALYTICS')

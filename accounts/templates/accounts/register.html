@@ -1,56 +1,62 @@
 {% extends "base.html" %}
 
-{% block title %}Create Account — PrepForge{% endblock %}
+{% block title %}Provision Operator // Register — PrepForge{% endblock %}
 
 {% block content %}
 <div class="auth-wrapper">
     <div class="card">
-        <h1 class="card-title">Create Account</h1>
-        <p class="card-subtitle">Practice company-aware Python interview questions with verified reference solutions.</p>
+        <div class="section-label" style="margin-bottom: 0.5rem;">
+            <span>// NEW OPERATOR REGISTRATION</span>
+        </div>
+        <h1 class="card-title">PROVISION ACCOUNT</h1>
+        <p class="card-subtitle">Deploy verified Python challenges with zero server execution vulnerability.</p>
 
         <form method="post">
             {% csrf_token %}
             
             {% if form.errors %}
                 <div class="alert alert-error">
-                    {% for field in form %}
-                        {% for error in field.errors %}
+                    <span class="alert-icon">▲</span>
+                    <div>
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
                             <div>{{ error }}</div>
                         {% endfor %}
-                    {% endfor %}
-                    {% for error in form.non_field_errors %}
-                        <div>{{ error }}</div>
-                    {% endfor %}
+                    </div>
                 </div>
             {% endif %}
 
             <div class="form-group">
-                <label class="form-label" for="id_username">Username</label>
+                <label class="form-label" for="id_username">Operator Identifier</label>
                 {{ form.username }}
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="id_email">Email (Optional)</label>
+                <label class="form-label" for="id_email">Electronic Mail (Optional)</label>
                 {{ form.email }}
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="id_password1">Password</label>
+                <label class="form-label" for="id_password1">Access Secret</label>
                 {{ form.password1 }}
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="id_password2">Confirm Password</label>
+                <label class="form-label" for="id_password2">Confirm Access Secret</label>
                 {{ form.password2 }}
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
-                Create Account & Get Started
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.85rem;">
+                DEPLOY CREDENTIALS ➔
             </button>
         </form>
 
-        <div style="margin-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
-            Already have an account? <a href="{% url 'login' %}" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">Sign In</a>
+        <div style="margin-top: 2rem; text-align: center; font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono);">
+            Already provisioned? <a href="{% url 'login' %}" style="color: var(--emerald-acid); text-decoration: none; font-weight: 700;">[SIGN IN]</a>
         </div>
     </div>
 </div>

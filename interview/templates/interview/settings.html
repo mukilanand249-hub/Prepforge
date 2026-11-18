@@ -1,15 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Configure Session — PrepForge{% endblock %}
+{% block title %}Session Crucible — PrepForge{% endblock %}
 
 {% block content %}
 <div class="settings-container">
     <div class="settings-hero">
-        <h1>Forge Your Interview Session</h1>
-        <p>AI-generated Python challenges tailored to company archetypes, verified in-browser before you begin.</p>
-        <div style="margin-top: 0.75rem;">
-            <span class="user-pill" style="font-size: 0.8rem; background: var(--bg-elevated);">
-                ⚡ Daily Generation Quota: <strong>{{ daily_usage }}/{{ daily_limit }}</strong> used today
+        <h1>THE INTERVIEW CRUCIBLE</h1>
+        <p>Company-aware Python challenges synthesized by Gemini and verified in your browser before execution.</p>
+        <div style="margin-top: 1rem; display: flex; justify-content: center; gap: 0.75rem;">
+            <span class="user-pill">
+                <span class="engine-dot"></span>
+                QUOTA: <strong style="color: var(--emerald-acid);">{{ daily_usage }}/{{ daily_limit }}</strong> GENERATIONS USED
             </span>
         </div>
     </div>
@@ -17,16 +18,27 @@
     <form method="post" action="{% url 'interview:create_session' %}">
         {% csrf_token %}
 
-        <!-- Step 1: Target Company -->
-        <div style="margin-bottom: 2rem;">
-            <label class="form-label" style="font-size: 1rem; margin-bottom: 0.75rem;">1. Select Target Company Style</label>
+        <!-- Step 1: Target Company Archetype -->
+        <div style="margin-bottom: 2.5rem;">
+            <div class="section-label">
+                <span>01 // TARGET COMPANY ARCHETYPE</span>
+            </div>
+            
             <div class="settings-grid">
                 {% for company in companies %}
                 <label class="option-box {% if forloop.first %}active{% endif %}" onclick="selectCompany(this)">
                     <input type="radio" name="company_id" value="{{ company.id }}" {% if forloop.first %}checked{% endif %} style="display: none;">
-                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.35rem;">{{ company.name }}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
-                        {{ company.style_notes|truncatewords:18 }}
+                    <div class="option-box-title">
+                        <span style="display: flex; align-items: center; gap: 0.6rem;">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: rgba(0, 255, 136, 0.12); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--emerald-acid);">
+                                {{ company.name|slice:":1" }}
+                            </span>
+                            {{ company.name }}
+                        </span>
+                        <span class="option-indicator"></span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-top: 0.5rem;">
+                        {{ company.style_notes|truncatewords:16 }}
                     </div>
                 </label>
                 {% endfor %}
@@ -34,67 +46,79 @@
                 <!-- Phase 2: Custom Company -->
                 <label class="option-box" onclick="selectCompany(this, true)">
                     <input type="radio" name="company_id" value="custom" style="display: none;">
-                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.35rem; color: var(--accent-primary);">
-                        + Custom Company
+                    <div class="option-box-title">
+                        <span style="display: flex; align-items: center; gap: 0.6rem; color: var(--emerald-acid);">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: rgba(0, 255, 136, 0.2); border: 1px solid var(--emerald-acid); border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem; color: #020402; font-weight: 900;">
+                                +
+                            </span>
+                            Custom Archetype
+                        </span>
+                        <span class="option-indicator"></span>
                     </div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
-                        Specify any company or domain-specific problem requirements.
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-top: 0.5rem;">
+                        Engineer challenges for custom tech stacks (Stripe, Databricks, Palantir).
                     </div>
                 </label>
             </div>
 
             <!-- Custom Company Input Fields (hidden by default) -->
-            <div id="customCompanyFields" style="display: none; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1rem;">
+            <div id="customCompanyFields" style="display: none; background: rgba(8, 14, 10, 0.85); backdrop-filter: var(--glass-blur); border: 1px solid var(--border-glass-strong); border-radius: var(--radius-md); padding: 1.5rem; margin-top: 1rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">
                 <div class="form-group">
-                    <label class="form-label" for="custom_company_name">Custom Company Name</label>
-                    <input type="text" name="custom_company_name" id="custom_company_name" class="form-input" placeholder="e.g. Stripe, Palantir, Databricks">
+                    <label class="form-label" for="custom_company_name">Company / Organization Identifier</label>
+                    <input type="text" name="custom_company_name" id="custom_company_name" class="form-input" placeholder="e.g. OpenAI, Stripe, Snowflake">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label" for="custom_style_notes">Custom Interview Style Guidance (Optional)</label>
-                    <input type="text" name="custom_style_notes" id="custom_style_notes" class="form-input" placeholder="e.g. Distributed consensus, rate-limiting algorithms, graph traversals">
+                    <label class="form-label" for="custom_style_notes">Prompt Style Guidance & Problem Archetype</label>
+                    <input type="text" name="custom_style_notes" id="custom_style_notes" class="form-input" placeholder="e.g. Rate limit sliding windows, distributed consensus, AST parser traversal">
                 </div>
             </div>
         </div>
 
-        <!-- Step 2: Difficulty & Format -->
-        <div class="card" style="margin-bottom: 2rem;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                
-                <div>
-                    <label class="form-label" for="difficulty_mode">2. Difficulty Mode</label>
-                    <select name="difficulty_mode" id="difficulty_mode" class="form-select">
-                        <option value="mixed" selected>Mixed (40% Easy, 40% Medium, 20% Hard)</option>
-                        <option value="easy">Easy (Fundamentals & Strings)</option>
-                        <option value="medium">Medium (Two Pointers & Hash Maps)</option>
-                        <option value="hard">Hard (Dynamic Programming & Optimization)</option>
-                    </select>
-                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
-                        Mixed mode starts easier and scales up.
-                    </small>
-                </div>
+        <!-- Step 2: Difficulty & Execution Parameters -->
+        <div style="margin-bottom: 2.5rem;">
+            <div class="section-label">
+                <span>02 // EXECUTION PARAMETERS</span>
+            </div>
 
-                <div>
-                    <label class="form-label" for="num_questions">3. Number of Questions</label>
-                    <input type="number" name="num_questions" id="num_questions" class="form-input" min="1" max="10" value="3" required>
-                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
-                        Between 1 and 10 questions (Recommended: 3).
-                    </small>
-                </div>
+            <div class="card">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.75rem;">
+                    
+                    <div>
+                        <label class="form-label" for="difficulty_mode">Difficulty Mode</label>
+                        <select name="difficulty_mode" id="difficulty_mode" class="form-select">
+                            <option value="mixed" selected>Mixed (40% Easy, 40% Med, 20% Hard)</option>
+                            <option value="easy">Easy (Fundamentals & Strings)</option>
+                            <option value="medium">Medium (Two Pointers & Hash Maps)</option>
+                            <option value="hard">Hard (Dynamic Programming & Graph Optim)</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.4rem; font-family: var(--font-mono);">
+                            [SEQUENCED]: Progresses from foundational to edge-case heavy.
+                        </small>
+                    </div>
 
-                <div>
-                    <label class="form-label" for="time_limit_override">4. Time Per Question (Optional)</label>
-                    <input type="number" name="time_limit_override" id="time_limit_override" class="form-input" min="5" max="60" placeholder="Use default (10m / 20m / 35m)">
-                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
-                        Leave blank to use default per difficulty, or set 5–60 mins.
-                    </small>
-                </div>
+                    <div>
+                        <label class="form-label" for="num_questions">Question Quantity</label>
+                        <input type="number" name="num_questions" id="num_questions" class="form-input" min="1" max="10" value="3" required>
+                        <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.4rem; font-family: var(--font-mono);">
+                            Range: 1 to 10 problems (Default: 3).
+                        </small>
+                    </div>
 
+                    <div>
+                        <label class="form-label" for="time_limit_override">Time Per Question (Minutes)</label>
+                        <input type="number" name="time_limit_override" id="time_limit_override" class="form-input" min="5" max="60" placeholder="Default (10m / 20m / 35m)">
+                        <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.4rem; font-family: var(--font-mono);">
+                            Leave blank for adaptive time per difficulty.
+                        </small>
+                    </div>
+
+                </div>
             </div>
         </div>
 
-        <div style="text-align: center;">
-            <button type="submit" class="btn btn-primary" style="padding: 0.9rem 2.5rem; font-size: 1.05rem;">
-                🚀 Start Verified Session
+        <div style="text-align: center; margin-top: 3rem;">
+            <button type="submit" class="btn btn-primary" style="padding: 1rem 3rem; font-size: 1.05rem; letter-spacing: 0.02em;">
+                ⚡ INITIALIZE VERIFIED SESSION
             </button>
         </div>
     </form>

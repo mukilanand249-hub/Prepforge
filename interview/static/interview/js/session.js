@@ -136,10 +136,33 @@ function initMonacoEditor(starterCode) {
         const container = document.getElementById("monaco-container");
         container.innerHTML = ""; // Clear existing
 
+        // Define bespoke Atmospheric Acid Glass editor theme
+        monaco.editor.defineTheme('prepforge-acid-dark', {
+            base: 'vs-dark',
+            inherit: true,
+            rules: [
+                { token: 'comment', foreground: '5e7364', fontStyle: 'italic' },
+                { token: 'keyword', foreground: '00ff88', fontStyle: 'bold' },
+                { token: 'identifier', foreground: 'ecfdf5' },
+                { token: 'string', foreground: '6ee7b7' },
+                { token: 'number', foreground: 'f59e0b' },
+                { token: 'delimiter', foreground: '94a89a' },
+            ],
+            colors: {
+                'editor.background': '#020503',
+                'editor.foreground': '#ecfdf5',
+                'editorLineNumber.foreground': '#243a29',
+                'editorLineNumber.activeForeground': '#00ff88',
+                'editor.lineHighlightBackground': '#051208',
+                'editorCursor.foreground': '#00ff88',
+                'editor.selectionBackground': '#064e3b',
+            }
+        });
+
         editorInstance = monaco.editor.create(container, {
             value: starterCode || "# Write your solution here\n",
             language: "python",
-            theme: "vs-dark",
+            theme: "prepforge-acid-dark",
             fontSize: 14,
             fontFamily: "'JetBrains Mono', Consolas, monospace",
             minimap: { enabled: false },
@@ -272,32 +295,36 @@ function renderTestResults(results, isSubmitMode) {
     const allPassed = passedCount === totalCount && totalCount > 0;
 
     const summaryHeader = document.createElement("div");
-    summaryHeader.style.marginBottom = "0.75rem";
-    summaryHeader.style.fontSize = "0.95rem";
+    summaryHeader.style.marginBottom = "0.85rem";
+    summaryHeader.style.fontSize = "0.92rem";
+    summaryHeader.style.fontFamily = "var(--font-mono)";
     summaryHeader.style.fontWeight = "700";
     summaryHeader.innerHTML = allPassed
-        ? `<span style="color: #34d399;">✓ All ${totalCount} Tests Passed (100%)</span>`
-        : `<span style="color: #f87171;">✗ ${passedCount} of ${totalCount} Tests Passed (${Math.round(passedCount/totalCount*100)}%)</span>`;
+        ? `<span style="color: var(--emerald-acid); text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);">✓ ALL ${totalCount} TEST BENCHMARKS PASSED (100.0%)</span>`
+        : `<span style="color: #ff6b6b; text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);">✗ ${passedCount} / ${totalCount} PASSED (${Math.round(passedCount/totalCount*100)}%)</span>`;
 
     container.appendChild(summaryHeader);
 
     (results || []).forEach((r, idx) => {
         const item = document.createElement("div");
-        item.style.padding = "0.4rem 0.6rem";
-        item.style.marginBottom = "0.4rem";
+        item.style.padding = "0.6rem 0.85rem";
+        item.style.marginBottom = "0.5rem";
         item.style.borderRadius = "4px";
-        item.style.background = r.passed ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)";
-        item.style.border = `1px solid ${r.passed ? '#059669' : '#dc2626'}`;
-        item.style.fontSize = "0.8rem";
+        item.style.background = r.passed ? "rgba(0, 255, 136, 0.05)" : "rgba(239, 68, 68, 0.06)";
+        item.style.border = `1px solid ${r.passed ? 'rgba(0, 255, 136, 0.28)' : 'rgba(239, 68, 68, 0.3)'}`;
+        item.style.fontSize = "0.82rem";
+        item.style.fontFamily = "var(--font-mono)";
 
-        const label = r.hidden ? `Test Case ${idx + 1} (Hidden)` : `Test Case ${idx + 1}`;
+        const label = r.hidden ? `CASE #${idx + 1} [HIDDEN]` : `CASE #${idx + 1} [VISIBLE]`;
         item.innerHTML = `
-            <div style="display: flex; justify-content: space-between; font-weight: 600;">
-                <span style="color: ${r.passed ? '#34d399' : '#f87171'};">${r.passed ? 'PASSED' : 'FAILED'} — ${label}</span>
-                <span style="color: #888888;">${r.ms}ms</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700;">
+                <span style="color: ${r.passed ? 'var(--emerald-acid)' : '#ff6b6b'}; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>${r.passed ? '●' : '▲'}</span> ${r.passed ? 'PASSED' : 'FAILED'} — ${label}
+                </span>
+                <span style="color: var(--text-muted); font-size: 0.75rem;">${r.ms}ms</span>
             </div>
-            ${r.error ? `<div style="color: #fca5a5; margin-top: 0.2rem; font-family: monospace;">${r.error}</div>` : ""}
-            ${!r.passed && r.actual !== null ? `<div style="color: #94a3b8; margin-top: 0.2rem;">Actual: <code>${JSON.stringify(r.actual)}</code></div>` : ""}
+            ${r.error ? `<div style="color: #fca5a5; margin-top: 0.35rem; padding: 0.4rem 0.6rem; background: rgba(0, 0, 0, 0.4); border-radius: 4px; font-size: 0.78rem;">${r.error}</div>` : ""}
+            ${!r.passed && r.actual !== null ? `<div style="color: var(--text-secondary); margin-top: 0.3rem; font-size: 0.78rem;">Actual Output: <code>${JSON.stringify(r.actual)}</code></div>` : ""}
         `;
         container.appendChild(item);
     });
