@@ -1,7 +1,8 @@
 services:
   - type: web
     name: prepforge
-    runtime: python
+    env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py seed_companies"
     startCommand: "gunicorn config.wsgi:application"
     envVars:
@@ -19,8 +20,11 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: "gemini-2.5-flash"
+      - key: DAILY_GENERATION_LIMIT
+        value: "20"
 
 databases:
   - name: prepforge-db
     databaseName: prepforge
     user: prepforge
+    plan: free
